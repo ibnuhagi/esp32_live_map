@@ -1,9 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>ESP32 Live Map</title>
+  <meta charset="UTF-8" />
+  <title>ESP32 Live GPS Tracker</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
-  <h1>ESP32 Live Map OK</h1>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+  // =============================
+  // 🔥 GANTI DENGAN CONFIG FIREBASE KAMU
+  // =============================
+  const firebaseConfig = {
+    apiKey: "AIzaSyDiUvCN_eHgHLBC2HFNeanIWAbOb50PMvs",
+    authDomain: "esp32-gps-tracker-61551.firebaseapp.com",
+    databaseURL: "https://esp32-gps-tracker-61551-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "esp32-gps-tracker-61551",
+    storageBucket: "esp32-gps-tracker-61551.firebasestorage.app",
+    messagingSenderId: "1016123229948",
+    appId: "1:1016123229948:web:42c0e4d99b9bc31f307979"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+
+  // =============================
+  // 🗺️ SETUP MAP
+  // =============================
+  const map = L.map('map').setView([-6.2, 106.8], 15);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  // Marker GPS
+  let marker = L.marker([-6.2, 106.8]).addTo(map)
+    .bindPopup("Menunggu GPS...")
+    .openPopup();
+
+  // =============================
+  // 📡 LISTEN DATA GPS DARI FIREBASE
+  // =============================
+  const gpsRef = database.ref("device/esp32_01");
+
+  gpsRef.on("value", (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    const lat = data.lat;
+    const lng = data.lng;
+    const speed = data.speed || 0;
+
+    if (lat && lng) {
+      marker.setLatLng([lat, lng]);
+      map.setView([lat, lng], map.getZoom());
+
+      marker.setPopupContent(
+        `<b>ESP32 GPS</b><br>
+         Lat: ${lat}<br>
+         Lng: ${lng}<br>
+         Speed: ${speed} km/h`
+      );
+    }
+  });
+</script>
+
 </body>
 </html>
